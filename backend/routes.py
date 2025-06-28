@@ -129,3 +129,27 @@ def delete_appointment(id):
     db.session.delete(appointment)
     db.session.commit()
     return {}, 204
+
+
+# REVIEWS 
+
+@app.route('/reviews', methods=['GET'])
+def get_reviews():
+    reviews = Review.query.all()
+    return jsonify([r.to_dict() for r in reviews])
+
+@app.route('/reviews', methods=['POST'])
+@jwt_required()
+def create_review():
+    data = request.get_json()
+    user_id = get_jwt_identity()
+    review = Review(
+        user_id=user_id,
+        hospital_id=data.get('hospital_id'),
+        doctor_id=data.get('doctor_id'),
+        rating=data['rating'],
+        comment=data['comment']
+    )
+    db.session.add(review)
+    db.session.commit()
+    return review.to_dict(), 201
