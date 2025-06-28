@@ -8,26 +8,18 @@ export default function AuthProvider({ children }) {
 
   useEffect(() => {
     if (token) {
-      fetch('/profile', { headers: { Authorization: `Bearer ${token}` }})
+      fetch('/profile', { headers: { Authorization: `Bearer ${token}` } })
         .then(res => res.json())
-        .then(setUser)
-        .catch(() => logout());
+        .then(data => setUser(data))
+        .catch(logout);
     }
   }, [token]);
 
-  const login = (newToken) => {
-    localStorage.setItem('token', newToken);
-    setToken(newToken);
-  };
-
-  const logout = () => {
-    localStorage.removeItem('token');
-    setToken(null);
-    setUser(null);
-  };
+  const login = (tok) => { localStorage.setItem('token', tok); setToken(tok); };
+  const logout = () => { localStorage.removeItem('token'); setToken(null); setUser(null); };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, token }}>
+    <AuthContext.Provider value={{ user, token, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
