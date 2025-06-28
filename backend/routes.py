@@ -153,3 +153,10 @@ def create_review():
     db.session.add(review)
     db.session.commit()
     return review.to_dict(), 201
+
+# INSURANCE PROVIDERS 
+
+@app.route('/insurance_providers', methods=['GET'])
+def get_insurance_providers():
+    providers = InsuranceProvider.query.all()
+    return jsonify([p.to_dict() for p in providers])
