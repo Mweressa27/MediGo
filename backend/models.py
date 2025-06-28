@@ -21,6 +21,12 @@ class User(db.Model, SerializerMixin):
     reviews = db.relationship('Review', backref='user', cascade='all, delete')
 
     serialize_rules = ('-appointments.user', '-reviews.user')
+    
+    def set_password(self, password):
+        self.password = bcrypt.generate_password_hash(password).decode('utf-8')
+
+    def check_password(self, password):
+        return bcrypt.check_password_hash(self.password, password)
 
 class Hospital(db.Model, SerializerMixin):
     __tablename__ = 'hospitals'

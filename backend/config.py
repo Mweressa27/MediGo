@@ -4,6 +4,7 @@ from flask_migrate import Migrate
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from sqlalchemy import MetaData
+from flask_bcrypt import Bcrypt
 
 app = Flask(__name__)
 
@@ -20,5 +21,7 @@ db = SQLAlchemy(metadata=metadata)
 migrate = Migrate(app, db)
 CORS(app)
 jwt = JWTManager(app)
+bcrypt = Bcrypt()
+bcrypt.init_app(app)
 
 db.init_app(app)
