@@ -44,3 +44,45 @@ def delete_hospital(id):
     db.session.delete(hospital)
     db.session.commit()
     return {}, 204
+
+
+# DOCTORS 
+
+@app.route('/doctors', methods=['GET'])
+def get_doctors():
+    doctors = Doctor.query.all()
+    return jsonify([d.to_dict() for d in doctors])
+
+@app.route('/doctors/<int:id>', methods=['GET'])
+def get_doctor(id):
+    doctor = Doctor.query.get_or_404(id)
+    return doctor.to_dict()
+
+@app.route('/doctors', methods=['POST'])
+def create_doctor():
+    data = request.get_json()
+    doctor = Doctor(
+        name=data['name'],
+        specialization=data['specialization'],
+        hospital_id=data['hospital_id'],
+        department_id=data['department_id']
+    )
+    db.session.add(doctor)
+    db.session.commit()
+    return doctor.to_dict(), 201
+
+@app.route('/doctors/<int:id>', methods=['PATCH'])
+def update_doctor(id):
+    doctor = Doctor.query.get_or_404(id)
+    data = request.get_json()
+    for key in data:
+        setattr(doctor, key, data[key])
+    db.session.commit()
+    return doctor.to_dict()
+
+@app.route('/doctors/<int:id>', methods=['DELETE'])
+def delete_doctor(id):
+    doctor = Doctor.query.get_or_404(id)
+    db.session.delete(doctor)
+    db.session.commit()
+    return {}, 204
