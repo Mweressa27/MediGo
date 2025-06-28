@@ -30,3 +30,10 @@ def get_appointments():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     return jsonify([a.to_dict() for a in user.appointments])
+
+@user_bp.route('/profile', methods=['GET'])
+@jwt_required()
+def get_profile():
+    user_id = get_jwt_identity()
+    user = User.query.get_or_404(user_id)
+    return jsonify(user.to_dict()), 200
