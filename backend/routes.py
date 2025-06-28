@@ -1,44 +1,42 @@
-from config import app, db
-from flask import request, jsonify
+from flask import Blueprint, request, jsonify
+from config import db
 from models import *
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
+routes_bp = Blueprint('routes', __name__)
+
+
 # HOSPITALS
 
-@app.route('/hospitals', methods=['GET'])
+
+@routes_bp.route('/hospitals', methods=['GET'])
 def get_hospitals():
     hospitals = Hospital.query.all()
     return jsonify([h.to_dict() for h in hospitals])
 
-@app.route('/hospitals/<int:id>', methods=['GET'])
+@routes_bp.route('/hospitals/<int:id>', methods=['GET'])
 def get_hospital(id):
     hospital = Hospital.query.get_or_404(id)
     return hospital.to_dict()
 
-@app.route('/hospitals', methods=['POST'])
+@routes_bp.route('/hospitals', methods=['POST'])
 def create_hospital():
     data = request.get_json()
-    hospital = Hospital(
-        name=data['name'],
-        address=data['address'],
-        latitude=data['latitude'],
-        longitude=data['longitude'],
-        phone_number=data['phone_number']
-    )
+    hospital = Hospital(**data)
     db.session.add(hospital)
     db.session.commit()
     return hospital.to_dict(), 201
 
-@app.route('/hospitals/<int:id>', methods=['PATCH'])
+@routes_bp.route('/hospitals/<int:id>', methods=['PATCH'])
 def update_hospital(id):
     data = request.get_json()
     hospital = Hospital.query.get_or_404(id)
-    for key in data:
-        setattr(hospital, key, data[key])
+    for key, value in data.items():
+        setattr(hospital, key, value)
     db.session.commit()
     return hospital.to_dict()
 
-@app.route('/hospitals/<int:id>', methods=['DELETE'])
+@routes_bp.route('/hospitals/<int:id>', methods=['DELETE'])
 def delete_hospital(id):
     hospital = Hospital.query.get_or_404(id)
     db.session.delete(hospital)
@@ -46,63 +44,60 @@ def delete_hospital(id):
     return {}, 204
 
 
-# DOCTORS 
+# DOCTORS
 
-@app.route('/doctors', methods=['GET'])
+
+@routes_bp.route('/doctors', methods=['GET'])
 def get_doctors():
     doctors = Doctor.query.all()
     return jsonify([d.to_dict() for d in doctors])
 
-@app.route('/doctors/<int:id>', methods=['GET'])
+@routes_bp.route('/doctors/<int:id>', methods=['GET'])
 def get_doctor(id):
     doctor = Doctor.query.get_or_404(id)
     return doctor.to_dict()
 
-@app.route('/doctors', methods=['POST'])
+@routes_bp.route('/doctors', methods=['POST'])
 def create_doctor():
     data = request.get_json()
-    doctor = Doctor(
-        name=data['name'],
-        specialization=data['specialization'],
-        hospital_id=data['hospital_id'],
-        department_id=data['department_id']
-    )
+    doctor = Doctor(**data)
     db.session.add(doctor)
     db.session.commit()
     return doctor.to_dict(), 201
 
-@app.route('/doctors/<int:id>', methods=['PATCH'])
+@routes_bp.route('/doctors/<int:id>', methods=['PATCH'])
 def update_doctor(id):
     doctor = Doctor.query.get_or_404(id)
     data = request.get_json()
-    for key in data:
-        setattr(doctor, key, data[key])
+    for key, value in data.items():
+        setattr(doctor, key, value)
     db.session.commit()
     return doctor.to_dict()
 
-@app.route('/doctors/<int:id>', methods=['DELETE'])
+@routes_bp.route('/doctors/<int:id>', methods=['DELETE'])
 def delete_doctor(id):
     doctor = Doctor.query.get_or_404(id)
     db.session.delete(doctor)
     db.session.commit()
     return {}, 204
 
-# APPOINTMENTS 
 
-@app.route('/appointments', methods=['GET'])
+# APPOINTMENTS
+
+
+@routes_bp.route('/appointments', methods=['GET'])
 @jwt_required()
 def get_appointments():
     user_id = get_jwt_identity()
     appointments = Appointment.query.filter_by(user_id=user_id).all()
     return jsonify([a.to_dict() for a in appointments])
 
-@app.route('/appointments', methods=['POST'])
+@routes_bp.route('/appointments', methods=['POST'])
 @jwt_required()
 def create_appointment():
     data = request.get_json()
-    user_id = get_jwt_identity()
     appointment = Appointment(
-        user_id=user_id,
+        user_id=get_jwt_identity(),
         doctor_id=data['doctor_id'],
         hospital_id=data['hospital_id'],
         appointment_date=data['appointment_date'],
@@ -112,17 +107,17 @@ def create_appointment():
     db.session.commit()
     return appointment.to_dict(), 201
 
-@app.route('/appointments/<int:id>', methods=['PATCH'])
+@routes_bp.route('/appointments/<int:id>', methods=['PATCH'])
 @jwt_required()
 def update_appointment(id):
     appointment = Appointment.query.get_or_404(id)
     data = request.get_json()
-    for key in data:
-        setattr(appointment, key, data[key])
+    for key, value in data.items():
+        setattr(appointment, key, value)
     db.session.commit()
     return appointment.to_dict()
 
-@app.route('/appointments/<int:id>', methods=['DELETE'])
+@routes_bp.route('/appointments/<int:id>', methods=['DELETE'])
 @jwt_required()
 def delete_appointment(id):
     appointment = Appointment.query.get_or_404(id)
@@ -131,20 +126,27 @@ def delete_appointment(id):
     return {}, 204
 
 
-# REVIEWS 
+# REVIEWS
 
-@app.route('/reviews', methods=['GET'])
+
+@routes_bp.route('/reviews', methods=['GET'])
 def get_reviews():
-    reviews = Review.query.all()
+    doctor_id = request.args.get('doctor_id')
+    hospital_id = request.args.get('hospital_id')
+    query = Review.query
+    if doctor_id:
+        query = query.filter_by(doctor_id=doctor_id)
+    if hospital_id:
+        query = query.filter_by(hospital_id=hospital_id)
+    reviews = query.order_by(Review.created_at.desc()).all()
     return jsonify([r.to_dict() for r in reviews])
 
-@app.route('/reviews', methods=['POST'])
+@routes_bp.route('/reviews', methods=['POST'])
 @jwt_required()
 def create_review():
     data = request.get_json()
-    user_id = get_jwt_identity()
     review = Review(
-        user_id=user_id,
+        user_id=get_jwt_identity(),
         hospital_id=data.get('hospital_id'),
         doctor_id=data.get('doctor_id'),
         rating=data['rating'],
@@ -154,9 +156,12 @@ def create_review():
     db.session.commit()
     return review.to_dict(), 201
 
-# INSURANCE PROVIDERS 
 
-@app.route('/insurance_providers', methods=['GET'])
+# INSURANCE PROVIDERS
+
+
+@routes_bp.route('/insurance_providers', methods=['GET'])
 def get_insurance_providers():
     providers = InsuranceProvider.query.all()
     return jsonify([p.to_dict() for p in providers])
+

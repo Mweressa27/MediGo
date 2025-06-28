@@ -1,6 +1,9 @@
 from config import db
 from sqlalchemy_serializer import SerializerMixin
 from datetime import datetime
+from flask_bcrypt import Bcrypt
+
+bcrypt = Bcrypt()
 
 # Association table for many-to-many relationship
 doctor_insurance = db.Table('doctor_insurance',
