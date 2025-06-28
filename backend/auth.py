@@ -23,3 +23,10 @@ def login():
         access_token = create_access_token(identity=user.id)
         return jsonify({"access_token": access_token, "user": user.to_dict()})
     return jsonify({"error": "Invalid credentials"}), 401
+
+@app.route('/appointments', methods=['GET'])
+@jwt_required()
+def get_appointments():
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    return jsonify([a.to_dict() for a in user.appointments])

@@ -1,96 +1,88 @@
-class User(db.Model):
+from config import db
+from sqlalchemy_serializer import SerializerMixin
+from datetime import datetime
+
+# Association table for many-to-many relationship
+doctor_insurance = db.Table('doctor_insurance',
+    db.Column('doctor_id', db.Integer, db.ForeignKey('doctors.id'), primary_key=True),
+    db.Column('insurance_id', db.Integer, db.ForeignKey('insurance_providers.id'), primary_key=True)
+)
+
+class User(db.Model, SerializerMixin):
     __tablename__ = 'users'
-
-    user_id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
-    email = db.Column(db.String, unique=True, nullable=False)
-    password = db.Column(db.String, nullable=False)
+    email = db.Column(db.String, unique=True)
+    password_hash = db.Column(db.String)
     phone_number = db.Column(db.String)
-    user_type = db.Column(db.String)
+    user_type = db.Column(db.String)  # patient, doctor, admin
 
-    appointments = db.relationship("Appointment", back_populates="user")
-    reviews = db.relationship("Review", back_populates="user")
+    appointments = db.relationship('Appointment', backref='user', cascade='all, delete')
+    reviews = db.relationship('Review', backref='user', cascade='all, delete')
 
-class Hospital(db.Model):
+    serialize_rules = ('-appointments.user', '-reviews.user')
+
+class Hospital(db.Model, SerializerMixin):
     __tablename__ = 'hospitals'
-
-    hospital_id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     address = db.Column(db.String)
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
     phone_number = db.Column(db.String)
 
-    departments = db.relationship("Department", back_populates="hospital")
-    doctors = db.relationship("Doctor", back_populates="hospital")
-    appointments = db.relationship("Appointment", back_populates="hospital")
-    reviews = db.relationship("Review", back_populates="hospital")
+    departments = db.relationship('Department', backref='hospital', cascade='all, delete')
+    doctors = db.relationship('Doctor', backref='hospital', cascade='all, delete')
+    appointments = db.relationship('Appointment', backref='hospital', cascade='all, delete')
+    reviews = db.relationship('Review', backref='hospital', cascade='all, delete')
 
-class Department(db.Model):
+class Department(db.Model, SerializerMixin):
     __tablename__ = 'departments'
-
-    department_id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
-    hospital_id = db.Column(db.Integer, db.ForeignKey('hospitals.hospital_id'))
 
-    hospital = db.relationship("Hospital", back_populates="departments")
-    doctors = db.relationship("Doctor", back_populates="department")
+    hospital_id = db.Column(db.Integer, db.ForeignKey('hospitals.id'))
 
-doctor_insurance = db.Table('doctor_insurance',
-    db.Column('doctor_id', db.Integer, db.ForeignKey('doctors.doctor_id'), primary_key=True),
-    db.Column('insurance_id', db.Integer, db.ForeignKey('insurance_providers.insurance_id'), primary_key=True)
-)
+    doctors = db.relationship('Doctor', backref='department', cascade='all, delete')
 
-class Doctor(db.Model):
+class Doctor(db.Model, SerializerMixin):
     __tablename__ = 'doctors'
-
-    doctor_id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     specialization = db.Column(db.String)
-    hospital_id = db.Column(db.Integer, db.ForeignKey('hospitals.hospital_id'))
-    department_id = db.Column(db.Integer, db.ForeignKey('departments.department_id'))
 
-    hospital = db.relationship("Hospital", back_populates="doctors")
-    department = db.relationship("Department", back_populates="doctors")
-    appointments = db.relationship("Appointment", back_populates="doctor")
-    reviews = db.relationship("Review", back_populates="doctor")
-    insurances = db.relationship("InsuranceProvider", secondary=doctor_insurance, back_populates="doctors")
+    hospital_id = db.Column(db.Integer, db.ForeignKey('hospitals.id'))
+    department_id = db.Column(db.Integer, db.ForeignKey('departments.id'))
 
-class InsuranceProvider(db.Model):
+    appointments = db.relationship('Appointment', backref='doctor', cascade='all, delete')
+    reviews = db.relationship('Review', backref='doctor', cascade='all, delete')
+    insurance_providers = db.relationship('InsuranceProvider', secondary=doctor_insurance, backref='doctors')
+
+class InsuranceProvider(db.Model, SerializerMixin):
     __tablename__ = 'insurance_providers'
-
-    insurance_id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     contact_info = db.Column(db.String)
 
-    doctors = db.relationship("Doctor", secondary=doctor_insurance, back_populates="insurances")
-
-class Appointment(db.Model):
+class Appointment(db.Model, SerializerMixin):
     __tablename__ = 'appointments'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    doctor_id = db.Column(db.Integer, db.ForeignKey('doctors.id'))
+    hospital_id = db.Column(db.Integer, db.ForeignKey('hospitals.id'))
 
-    appointment_id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
-    doctor_id = db.Column(db.Integer, db.ForeignKey('doctors.doctor_id'))
-    hospital_id = db.Column(db.Integer, db.ForeignKey('hospitals.hospital_id'))
     appointment_date = db.Column(db.DateTime)
-    status = db.Column(db.String)  # e.g., "booked", "cancelled", "completed"
+    status = db.Column(db.String)  # booked, cancelled, completed
 
-    user = db.relationship("User", back_populates="appointments")
-    doctor = db.relationship("Doctor", back_populates="appointments")
-    hospital = db.relationship("Hospital", back_populates="appointments")
+    serialize_rules = ('-user.appointments', '-doctor.appointments', '-hospital.appointments')
 
-class Review(db.Model):
+class Review(db.Model, SerializerMixin):
     __tablename__ = 'reviews'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    hospital_id = db.Column(db.Integer, db.ForeignKey('hospitals.id'), nullable=True)
+    doctor_id = db.Column(db.Integer, db.ForeignKey('doctors.id'), nullable=True)
 
-    review_id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
-    hospital_id = db.Column(db.Integer, db.ForeignKey('hospitals.hospital_id'), nullable=True)
-    doctor_id = db.Column(db.Integer, db.ForeignKey('doctors.doctor_id'), nullable=True)
     rating = db.Column(db.Integer)
     comment = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    user = db.relationship("User", back_populates="reviews")
-    hospital = db.relationship("Hospital", back_populates="reviews")
-    doctor = db.relationship("Doctor", back_populates="reviews")
-
