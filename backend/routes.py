@@ -86,3 +86,46 @@ def delete_doctor(id):
     db.session.delete(doctor)
     db.session.commit()
     return {}, 204
+
+# APPOINTMENTS 
+
+@app.route('/appointments', methods=['GET'])
+@jwt_required()
+def get_appointments():
+    user_id = get_jwt_identity()
+    appointments = Appointment.query.filter_by(user_id=user_id).all()
+    return jsonify([a.to_dict() for a in appointments])
+
+@app.route('/appointments', methods=['POST'])
+@jwt_required()
+def create_appointment():
+    data = request.get_json()
+    user_id = get_jwt_identity()
+    appointment = Appointment(
+        user_id=user_id,
+        doctor_id=data['doctor_id'],
+        hospital_id=data['hospital_id'],
+        appointment_date=data['appointment_date'],
+        status='booked'
+    )
+    db.session.add(appointment)
+    db.session.commit()
+    return appointment.to_dict(), 201
+
+@app.route('/appointments/<int:id>', methods=['PATCH'])
+@jwt_required()
+def update_appointment(id):
+    appointment = Appointment.query.get_or_404(id)
+    data = request.get_json()
+    for key in data:
+        setattr(appointment, key, data[key])
+    db.session.commit()
+    return appointment.to_dict()
+
+@app.route('/appointments/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_appointment(id):
+    appointment = Appointment.query.get_or_404(id)
+    db.session.delete(appointment)
+    db.session.commit()
+    return {}, 204
