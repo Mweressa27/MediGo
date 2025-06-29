@@ -5,9 +5,23 @@ with app.app_context():
     db.drop_all()
     db.create_all()
 
-    # Create hospitals
-    h1 = Hospital(name="Nairobi Hospital", address="Upper Hill", latitude=-1.302, longitude=36.806, phone_number="020-2845000")
-    h2 = Hospital(name="Aga Khan Hospital", address="Parklands", latitude=-1.261, longitude=36.815, phone_number="020-3662000")
+    # Create hospitals with images
+    h1 = Hospital(
+        name="Nairobi Hospital",
+        address="Upper Hill",
+        latitude=-1.302,
+        longitude=36.806,
+        phone_number="020-2845000",
+        image_url="https://images.unsplash.com/photo-1584438784894-089d6a62b8e8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80"
+    )
+    h2 = Hospital(
+        name="Aga Khan Hospital",
+        address="Parklands",
+        latitude=-1.261,
+        longitude=36.815,
+        phone_number="020-3662000",
+        image_url="https://images.unsplash.com/photo-1600959907703-952d3f62c1a0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80"
+    )
 
     # Create departments
     d1 = Department(name="Cardiology", hospital=h1)
@@ -36,4 +50,4 @@ with app.app_context():
     # Commit everything
     db.session.add_all([h1, h2, d1, d2, d3, doc1, doc2, doc3, i1, i2, u1, u2])
     db.session.commit()
-    print("🌱 Seeded database!")
+    

@@ -1,18 +1,18 @@
 from config import db
-from sqlalchemy_serializer import SerializerMixin
 from datetime import datetime
 from flask_bcrypt import Bcrypt
 
 bcrypt = Bcrypt()
 
-# Association table for many-to-many relationship
+# Association table for many-to-many relationship between doctors and insurance providers
 doctor_insurance = db.Table('doctor_insurance',
     db.Column('doctor_id', db.Integer, db.ForeignKey('doctors.id'), primary_key=True),
     db.Column('insurance_id', db.Integer, db.ForeignKey('insurance_providers.id'), primary_key=True)
 )
 
-class User(db.Model, SerializerMixin):
+class User(db.Model):
     __tablename__ = 'users'
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     email = db.Column(db.String, unique=True)
@@ -23,39 +23,70 @@ class User(db.Model, SerializerMixin):
     appointments = db.relationship('Appointment', backref='user', cascade='all, delete')
     reviews = db.relationship('Review', backref='user', cascade='all, delete')
 
-    serialize_rules = ('-appointments.user', '-reviews.user')
-    
     def set_password(self, password):
-        self.password = bcrypt.generate_password_hash(password).decode('utf-8')
+        self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
 
     def check_password(self, password):
-        return bcrypt.check_password_hash(self.password, password)
+        return bcrypt.check_password_hash(self.password_hash, password)
 
-class Hospital(db.Model, SerializerMixin):
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'email': self.email,
+            'phone_number': self.phone_number,
+            'user_type': self.user_type
+        }
+
+
+class Hospital(db.Model):
     __tablename__ = 'hospitals'
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     address = db.Column(db.String)
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
     phone_number = db.Column(db.String)
+    image_url = db.Column(db.String)
 
     departments = db.relationship('Department', backref='hospital', cascade='all, delete')
     doctors = db.relationship('Doctor', backref='hospital', cascade='all, delete')
     appointments = db.relationship('Appointment', backref='hospital', cascade='all, delete')
     reviews = db.relationship('Review', backref='hospital', cascade='all, delete')
 
-class Department(db.Model, SerializerMixin):
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'address': self.address,
+            'latitude': self.latitude,
+            'longitude': self.longitude,
+            'phone_number': self.phone_number,
+            'image_url': self.image_url
+        }
+
+
+class Department(db.Model):
     __tablename__ = 'departments'
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
 
     hospital_id = db.Column(db.Integer, db.ForeignKey('hospitals.id'))
-
     doctors = db.relationship('Doctor', backref='department', cascade='all, delete')
 
-class Doctor(db.Model, SerializerMixin):
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'hospital_id': self.hospital_id
+        }
+
+
+class Doctor(db.Model):
     __tablename__ = 'doctors'
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     specialization = db.Column(db.String)
@@ -67,14 +98,35 @@ class Doctor(db.Model, SerializerMixin):
     reviews = db.relationship('Review', backref='doctor', cascade='all, delete')
     insurance_providers = db.relationship('InsuranceProvider', secondary=doctor_insurance, backref='doctors')
 
-class InsuranceProvider(db.Model, SerializerMixin):
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'specialization': self.specialization,
+            'hospital_id': self.hospital_id,
+            'department_id': self.department_id,
+            'insurance_providers': [provider.to_dict() for provider in self.insurance_providers]
+        }
+
+
+class InsuranceProvider(db.Model):
     __tablename__ = 'insurance_providers'
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     contact_info = db.Column(db.String)
 
-class Appointment(db.Model, SerializerMixin):
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'contact_info': self.contact_info
+        }
+
+
+class Appointment(db.Model):
     __tablename__ = 'appointments'
+
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     doctor_id = db.Column(db.Integer, db.ForeignKey('doctors.id'))
@@ -83,10 +135,20 @@ class Appointment(db.Model, SerializerMixin):
     appointment_date = db.Column(db.DateTime)
     status = db.Column(db.String)  # booked, cancelled, completed
 
-    serialize_rules = ('-user.appointments', '-doctor.appointments', '-hospital.appointments')
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'doctor_id': self.doctor_id,
+            'hospital_id': self.hospital_id,
+            'appointment_date': self.appointment_date.isoformat(),
+            'status': self.status
+        }
 
-class Review(db.Model, SerializerMixin):
+
+class Review(db.Model):
     __tablename__ = 'reviews'
+
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     hospital_id = db.Column(db.Integer, db.ForeignKey('hospitals.id'), nullable=True)
@@ -95,3 +157,14 @@ class Review(db.Model, SerializerMixin):
     rating = db.Column(db.Integer)
     comment = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'hospital_id': self.hospital_id,
+            'doctor_id': self.doctor_id,
+            'rating': self.rating,
+            'comment': self.comment,
+            'created_at': self.created_at.isoformat()
+        }
