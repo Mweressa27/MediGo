@@ -18,13 +18,17 @@ const Register = () => {
     name: Yup.string().required('Name is required'),
     email: Yup.string().email('Invalid email format').required('Email is required'),
     password: Yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
-    phone_number: Yup.string().matches(/^\+?\d{10,15}$/, 'Invalid phone number'),
-    user_type: Yup.string().oneOf(['patient', 'doctor', 'admin'], 'Select a valid user type').required('User type is required'),
+    phone_number: Yup.string()
+      .matches(/^\+?\d{10,15}$/, 'Invalid phone number')
+      .required('Phone number is required'),
+    user_type: Yup.string()
+      .oneOf(['patient', 'doctor', 'admin'], 'Select a valid user type')
+      .required('User type is required'),
   });
 
   const handleSubmit = async (values, { setSubmitting, setErrors }) => {
     try {
-      const response = await fetch('/register', {
+      const response = await fetch('http://localhost:5555/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values),
