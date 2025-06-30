@@ -27,13 +27,20 @@ export default function Login() {
             .then((r) =>
               r.json().then((data) => {
                 if (r.ok) {
+                  // ✅ Save token to localStorage
+                  localStorage.setItem('token', data.access_token);
+
+                  // ✅ Call login function from context
                   login(data.access_token);
+
+                  // ✅ Navigate to hospitals page
                   navigate('/hospitals');
                 } else {
-                  setStatus(data.error);
+                  setStatus(data.error || 'Login failed. Please try again.');
                 }
               })
             )
+            .catch(() => setStatus('Server error. Please try again.'))
             .finally(() => setSubmitting(false));
         }}
       >

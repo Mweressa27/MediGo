@@ -9,6 +9,9 @@ import HospitalList from './pages/HospitalList';
 import DoctorList from './pages/DoctorList';
 import AppointmentPage from './pages/AppointmentPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import HospitalDetail from './components/HospitalDetail';
+import MyAppointments from './components/MyAppointments';
+import AdminDashboard from './pages/AdminDashboard';
 
 function App() {
   return (
@@ -22,6 +25,9 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/hospitals" element={<HospitalList />} />
           <Route path="/doctors" element={<DoctorList />} />
+          <Route path="/hospitals/:id" element={<HospitalDetail />} />
+          <Route path="/appointments" element={<MyAppointments />} />
+          <Route path="/admin" element={<AdminDashboard />} />
 
           {/* Protected Route Example */}
           <Route

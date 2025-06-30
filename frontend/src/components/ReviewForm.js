@@ -1,39 +1,57 @@
-import { Formik, Form, Field, ErrorMessage } from 'formik'
-import * as Yup from 'yup'
+import { useContext, useState } from 'react';
+import { AuthContext } from '../context/AuthContext';
 
-const ReviewForm = ({ doctorId, hospitalId, onSubmit }) => {
+export default function ReviewForm({ hospitalId = null, doctorId = null, onSuccess }) {
+  const { token } = useContext(AuthContext);
+  const [comment, setComment] = useState('');
+  const [rating, setRating] = useState(5);
+  const [error, setError] = useState(null);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    fetch('http://localhost:5555/reviews', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ hospital_id: hospitalId, doctor_id: doctorId, rating, comment }),
+    })
+      .then((r) => {
+        if (!r.ok) return r.json().then((err) => Promise.reject(err));
+        return r.json();
+      })
+      .then((data) => {
+        setComment('');
+        setRating(5);
+        onSuccess && onSuccess(data);
+      })
+      .catch((err) => setError(err.error || 'Failed to submit review.'));
+  };
+
   return (
-    <Formik
-      initialValues={{ rating: '', comment: '' }}
-      validationSchema={Yup.object({
-        rating: Yup.number().min(1).max(5).required(),
-        comment: Yup.string().required('Required'),
-      })}
-      onSubmit={(values, { resetForm }) => {
-        const payload = {
-          ...values,
-          doctor_id: doctorId || null,
-          hospital_id: hospitalId || null,
-        }
-        onSubmit(payload)
-        resetForm()
-      }}
-    >
-      <Form className="space-y-4">
-        <div>
-          <label>Rating</label>
-          <Field type="number" name="rating" min={1} max={5} className="input" />
-          <ErrorMessage name="rating" component="div" className="text-red-500 text-sm" />
-        </div>
-        <div>
-          <label>Comment</label>
-          <Field as="textarea" name="comment" className="input h-24" />
-          <ErrorMessage name="comment" component="div" className="text-red-500 text-sm" />
-        </div>
-        <button type="submit" className="btn btn-primary">Submit Review</button>
-      </Form>
-    </Formik>
-  )
+    <form onSubmit={handleSubmit} className="space-y-3 mt-4">
+      <textarea
+        className="w-full border p-2 rounded"
+        placeholder="Write your review..."
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        required
+      />
+      <div>
+        <label className="block text-sm">Rating: {rating}</label>
+        <input
+          type="range"
+          min="1"
+          max="5"
+          value={rating}
+          onChange={(e) => setRating(parseInt(e.target.value))}
+        />
+      </div>
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+      <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
+        Submit Review
+      </button>
+    </form>
+  );
 }
-
-export default ReviewForm

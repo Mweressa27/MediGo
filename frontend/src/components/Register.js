@@ -87,7 +87,7 @@ const Register = () => {
               <Field as="select" name="user_type" className="w-full input">
                 <option value="">Select user type</option>
                 <option value="patient">Patient</option>
-                <option value="doctor">Doctor</option>
+                
                 <option value="admin">Admin</option>
               </Field>
               <ErrorMessage name="user_type" component="div" className="text-red-500 text-sm" />
