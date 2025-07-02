@@ -26,7 +26,7 @@ export default function ReviewForm({ hospitalId = null, doctorId = null, onSucce
         setRating(5);
         onSuccess && onSuccess(data);
       })
-      .catch((err) => setError(err.error || 'Failed to submit review.'));
+      .catch((err) => setError(err.error || ''));
   };
 
   return (

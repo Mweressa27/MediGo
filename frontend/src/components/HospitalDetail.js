@@ -51,7 +51,7 @@ export default function HospitalDetail() {
       body: JSON.stringify({
         doctor_id: doctorId,
         hospital_id: hospital.id,
-        appointment_date: new Date(appointmentDate).toISOString(), // format the date
+        appointment_date: new Date(appointmentDate).toISOString(),
       }),
     });
 
@@ -96,7 +96,20 @@ export default function HospitalDetail() {
               <h3 className="text-lg font-bold">{doctor.name}</h3>
               <p className="text-gray-600">Specialization: {doctor.specialization}</p>
 
-              <div className="mt-2">
+              <div className="mt-1 text-sm text-gray-500">
+                <strong>Accepted Insurance:</strong>{' '}
+                {doctor.insurance_providers && doctor.insurance_providers.length > 0 ? (
+                  <ul className="list-disc ml-5">
+                    {doctor.insurance_providers.map((ip) => (
+                      <li key={ip.id}>{ip.name}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <span>None listed</span>
+                )}
+              </div>
+
+              <div className="mt-3">
                 <input
                   type="datetime-local"
                   value={selectedAppointments[doctor.id] || ''}
@@ -126,3 +139,4 @@ export default function HospitalDetail() {
     </div>
   );
 }
+

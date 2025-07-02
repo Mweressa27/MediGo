@@ -11,7 +11,7 @@ export default function Navbar() {
     navigate('/');
   };
 
-  if (loading) return null; // Wait for auth to load
+  if (loading) return null;
 
   return (
     <nav className="bg-blue-600 text-white p-4 shadow">
@@ -23,13 +23,9 @@ export default function Navbar() {
         <div className="space-x-4">
           {user ? (
             <>
-              {user.user_type === 'admin' ? (
+              {user.user_type === 'admin' && (
                 <Link to="/admin" className="hover:underline">
                   Admin Dashboard
-                </Link>
-              ) : (
-                <Link to="/appointments" className="hover:underline">
-                  My Appointments
                 </Link>
               )}
               <button onClick={handleLogout} className="hover:underline">
@@ -39,7 +35,7 @@ export default function Navbar() {
           ) : (
             <>
               <Link to="/" className="hover:underline">
-                Hospitals
+                Home
               </Link>
               <Link to="/login" className="hover:underline">
                 Login

@@ -42,7 +42,7 @@ const Register = () => {
       }
     } catch (err) {
       console.error(err);
-      setErrors({ email: 'Network error. Please try again.' });
+      setErrors({ email: 'Please try again.' });
     } finally {
       setSubmitting(false);
     }
