@@ -12,6 +12,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import HospitalDetail from './components/HospitalDetail';
 import MyAppointments from './components/MyAppointments';
 import AdminDashboard from './pages/AdminDashboard';
+import Footer from './components/Footer';
 
 function App() {
   return (
@@ -47,6 +48,7 @@ function App() {
             }
           />
         </Routes>
+        <Footer />
       </div>
     </Router>
   );
