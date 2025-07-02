@@ -11,16 +11,16 @@ with app.app_context():
         address="Upper Hill",
         latitude=-1.302,
         longitude=36.806,
-        phone_number="020-2845000",
-        image_url="https://images.unsplash.com/photo-1584438784894-089d6a62b8e8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80"
+        phone_number="+254 123456789",
+        image_url="https://cdn.pixabay.com/photo/2016/04/19/13/22/hospital-1338585_1280.jpg"
     )
     h2 = Hospital(
         name="Aga Khan Hospital",
         address="Parklands",
         latitude=-1.261,
         longitude=36.815,
-        phone_number="020-3662000",
-        image_url="https://images.unsplash.com/photo-1600959907703-952d3f62c1a0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80"
+        phone_number="+254 234567892",
+        image_url="https://media.istockphoto.com/id/2155775525/photo/senior-medical-exam.jpg?s=1024x1024&w=is&k=20&c=7qLMvBRGLq_GQgzhjduRMIlPAtNxT-WFsZd7qKcG6l4="
     )
 
     # Create departments

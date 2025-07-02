@@ -14,20 +14,31 @@ class User(db.Model):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    email = db.Column(db.String, unique=True)
-    password_hash = db.Column(db.String)
+    name = db.Column(db.String, nullable=False)
+    email = db.Column(db.String, unique=True, nullable=False)
+    password_hash = db.Column(db.String, nullable=False)
     phone_number = db.Column(db.String)
-    user_type = db.Column(db.String)  # patient, doctor, admin
+    user_type = db.Column(db.String, nullable=False)  # 'patient' or 'admin'
 
-    appointments = db.relationship('Appointment', backref='user', cascade='all, delete')
-    reviews = db.relationship('Review', backref='user', cascade='all, delete')
+    appointments = db.relationship('Appointment', backref='user', cascade='all, delete-orphan')
+    reviews = db.relationship('Review', backref='user', cascade='all, delete-orphan')
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if self.user_type not in ['patient', 'admin']:
+            raise ValueError("user_type must be 'patient' or 'admin'")
 
     def set_password(self, password):
         self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
 
     def check_password(self, password):
         return bcrypt.check_password_hash(self.password_hash, password)
+
+    def is_patient(self):
+        return self.user_type == 'patient'
+
+    def is_admin(self):
+        return self.user_type == 'admin'
 
     def to_dict(self):
         return {

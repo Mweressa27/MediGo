@@ -2,21 +2,24 @@ from flask import Blueprint, request, jsonify
 from config import db
 from models import *
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from datetime import datetime
 
 routes_bp = Blueprint('routes', __name__)
 
-
-# -------------------- HOSPITALS --------------------
-
+# HOSPITALS 
 @routes_bp.route('/hospitals', methods=['GET'])
 def get_hospitals():
     search = request.args.get('q')
     query = Hospital.query
     if search:
-        query = query.filter(Hospital.name.ilike(f"%{search}%"))
+        query = query.filter(
+            db.or_(
+                Hospital.name.ilike(f"%{search}%"),
+                Hospital.address.ilike(f"%{search}%")
+            )
+        )
     hospitals = query.all()
     return jsonify([h.to_dict() for h in hospitals]), 200
-
 
 @routes_bp.route('/hospitals/<int:id>', methods=['GET'])
 def get_hospital(id):
@@ -31,8 +34,6 @@ def get_hospital(id):
         for d in hospital.doctors
     ]
     return jsonify(data), 200
-
-
 
 @routes_bp.route('/hospitals', methods=['POST'])
 def create_hospital():
@@ -59,7 +60,7 @@ def delete_hospital(id):
     return {}, 204
 
 
-# -------------------- DOCTORS --------------------
+# DOCTORS 
 
 @routes_bp.route('/doctors', methods=['GET'])
 def get_doctors():
@@ -69,7 +70,6 @@ def get_doctors():
         query = query.filter(Doctor.name.ilike(f"%{search}%"))
     doctors = query.all()
     return jsonify([d.to_dict() for d in doctors]), 200
-
 
 @routes_bp.route('/doctors/<int:id>', methods=['GET'])
 def get_doctor(id):
@@ -101,7 +101,7 @@ def delete_doctor(id):
     return {}, 204
 
 
-# -------------------- APPOINTMENTS --------------------
+# APPOINTMENTS 
 
 @routes_bp.route('/appointments', methods=['GET'])
 @jwt_required()
@@ -114,17 +114,35 @@ def get_appointments():
 @jwt_required()
 def create_appointment():
     data = request.get_json()
-    appointment = Appointment(
-        user_id=get_jwt_identity(),
-        doctor_id=data['doctor_id'],
-        hospital_id=data['hospital_id'],
-        appointment_date=data['appointment_date'],
-        status='booked'
-    )
-    db.session.add(appointment)
-    db.session.commit()
-    return appointment.to_dict(), 201
 
+    try:
+        user_id = get_jwt_identity()
+        doctor_id = data.get('doctor_id')
+        hospital_id = data.get('hospital_id')
+        appointment_date_str = data.get('appointment_date')
+
+        if not all([doctor_id, hospital_id, appointment_date_str]):
+            return jsonify({'error': 'Missing required fields.'}), 400
+
+        try:
+            appointment_date = datetime.fromisoformat(appointment_date_str)
+        except ValueError:
+            return jsonify({'error': 'Invalid date format. Use ISO 8601 format.'}), 400
+
+        appointment = Appointment(
+            user_id=user_id,
+            doctor_id=doctor_id,
+            hospital_id=hospital_id,
+            appointment_date=appointment_date,
+            status='booked'
+        )
+
+        db.session.add(appointment)
+        db.session.commit()
+        return appointment.to_dict(), 201
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @routes_bp.route('/appointments/<int:id>', methods=['PATCH'])
 @jwt_required()
@@ -145,7 +163,7 @@ def delete_appointment(id):
     return {}, 204
 
 
-# -------------------- REVIEWS --------------------
+# REVIEWS 
 
 @routes_bp.route('/reviews', methods=['GET'])
 def get_reviews():
@@ -163,21 +181,38 @@ def get_reviews():
 @jwt_required()
 def create_review():
     data = request.get_json()
-    review = Review(
-        user_id=get_jwt_identity(),
-        hospital_id=data.get('hospital_id'),
-        doctor_id=data.get('doctor_id'),
-        rating=data['rating'],
-        comment=data['comment']
-    )
-    db.session.add(review)
-    db.session.commit()
-    return review.to_dict(), 201
+    try:
+        review = Review(
+            user_id=get_jwt_identity(),
+            hospital_id=data.get('hospital_id'),
+            doctor_id=data.get('doctor_id'),
+            rating=data['rating'],
+            comment=data['comment']
+        )
+        db.session.add(review)
+        db.session.commit()
+        return review.to_dict(), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
 
 
-# -------------------- INSURANCE PROVIDERS --------------------
+# INSURANCE PROVIDERS 
 
 @routes_bp.route('/insurance_providers', methods=['GET'])
 def get_insurance_providers():
     providers = InsuranceProvider.query.all()
     return jsonify([p.to_dict() for p in providers]), 200
+
+# ADMIN DASHBOARD
+
+@routes_bp.route('/admin/appointments', methods=['GET'])
+@jwt_required()
+def get_all_appointments():
+    user_id = get_jwt_identity()
+    user = User.query.get_or_404(user_id)
+
+    if user.user_type != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    appointments = Appointment.query.order_by(Appointment.appointment_date.desc()).all()
+    return jsonify([a.to_dict() for a in appointments]), 200
